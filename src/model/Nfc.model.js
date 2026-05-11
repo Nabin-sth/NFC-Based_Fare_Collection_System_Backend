@@ -44,11 +44,15 @@ const nfcCardSchema = new mongoose.Schema({
 
   verifiedAt: Date,
 
+  lastUsedAt: Date,
+
   requestedAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-export const NfcCard = mongoose.model("NfcCard", nfcCardSchema);
+nfcCardSchema.index({ cardUid: 1 });
+nfcCardSchema.index({ user: 1 });
 
+export const NfcCard = mongoose.model("NfcCard", nfcCardSchema);

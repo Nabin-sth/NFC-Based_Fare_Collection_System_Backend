@@ -8,6 +8,8 @@ import { calculateFare } from "../utils/distance.utils.js";
 import { calculateDistance } from "../utils/dist.js";
 import mongoose from "mongoose";
 
+const TAP_COOLDOWN_SECONDS = 10;
+
 export const processTapEvent = async (rfid, busId, latitude, longitude) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -99,7 +101,6 @@ const handleEntry = async (
   );
   const createdTrip = trip[0];
   console.log("createdTrip: ", createdTrip);
-  
 
   await User.findByIdAndUpdate(
     passenger._id,
@@ -113,12 +114,12 @@ const handleEntry = async (
   );
 
   await session.commitTransaction();
-console.log("passengerName: ", passenger.FirstName);
+  console.log("passengerName: ", passenger.FirstName);
 
   return {
     status: "entry",
     message: "Entry recorded successfully",
-    passengerName: passenger.FirstName,  // ← add this
+    passengerName: passenger.FirstName, // ← add this
     tripId: createdTrip._id,
     entryTime: createdTrip.entryTime,
     entryLocation: createdTrip.entryLocation,

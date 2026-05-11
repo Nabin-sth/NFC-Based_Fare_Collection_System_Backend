@@ -92,7 +92,11 @@ const formatBusLocation = (bus) => {
  * - maxAgeMinutes=30
  */
 export const getAllBusLocations = asyncHandler(async (req, res) => {
-  const { includeInactive = "true", status, maxAgeMinutes } = req.query;
+  const {
+    includeInactive = "true",
+    status,
+    maxAgeMinutes,
+  } = req.query;
 
   const match = {
     "currentLocation.lat": { $type: "number" },

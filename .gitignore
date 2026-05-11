@@ -60,3 +60,6 @@ logs
 
 # MongoDB dump files
 dump/
+
+.cursorrules
+.cursorignore
