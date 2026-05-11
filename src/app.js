@@ -126,5 +126,6 @@ app.use("/bus", busLocationRoute);
 //     totalDistance,
 //   });
 // });
-
+import healthRoute from "./router/health.route.js";
+app.use("/api/v1", healthRoute);
 export default app;
