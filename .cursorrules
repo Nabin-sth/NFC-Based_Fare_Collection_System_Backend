@@ -1,0 +1,224 @@
+ignore:
+  # =========================
+  # Backend Dependencies
+  # =========================
+  - "Major-Project/node_modules/**"
+
+  # =========================
+  # Flutter Build & Cache
+  # =========================
+  - "MAJOR PROJECT FRONTEND/build/**"
+  - "MAJOR PROJECT FRONTEND/.dart_tool/**"
+  - "MAJOR PROJECT FRONTEND/.pub-cache/**"
+  - "MAJOR PROJECT FRONTEND/.flutter-plugins"
+  - "MAJOR PROJECT FRONTEND/.flutter-plugins-dependencies"
+
+  # =========================
+  # iOS Artifacts
+  # =========================
+  - "MAJOR PROJECT FRONTEND/ios/Pods/**"
+  - "MAJOR PROJECT FRONTEND/ios/Flutter/**"
+  - "MAJOR PROJECT FRONTEND/ios/build/**"
+
+  # =========================
+  # Android Artifacts
+  # =========================
+  - "MAJOR PROJECT FRONTEND/android/.gradle/**"
+  - "MAJOR PROJECT FRONTEND/android/app/build/**"
+  - "MAJOR PROJECT FRONTEND/android/build/**"
+
+  # =========================
+  # IDE / Editor Files
+  # =========================
+  - "**/.idea/**"
+  - "**/.vscode/**"
+  - "**/.fleet/**"
+
+  # =========================
+  # Git
+  # =========================
+  - "**/.git/**"
+
+  # =========================
+  # Cache / Coverage
+  # =========================
+  - "**/.cache/**"
+  - "**/coverage/**"
+  - "**/.nyc_output/**"
+
+  # =========================
+  # Logs
+  # =========================
+  - "**/*.log"
+  - "**/logs/**"
+
+  # =========================
+  # Environment / Secrets
+  # =========================
+  - "**/.env"
+  - "**/.env.*"
+  - "**/firebase_options.dart"
+  - "**/google-services.json"
+  - "**/GoogleService-Info.plist"
+
+  # =========================
+  # Generated Files
+  # =========================
+  - "**/*.g.dart"
+  - "**/*.freezed.dart"
+  - "**/*.mocks.dart"
+
+rules:
+  # =========================================================
+  # GENERAL PROJECT RULES
+  # =========================================================
+  - "Always analyze the existing backend and frontend architecture before generating code."
+
+  - "Understand the existing authentication flow, routing structure, state management, and API architecture before making changes."
+
+  - "Reuse existing architecture, services, middleware, widgets, providers, utilities, and naming conventions."
+
+  - "Do not rewrite unrelated files."
+
+  - "Maintain backward compatibility."
+
+  - "Keep changes minimal, modular, and production-ready."
+
+  - "Do not generate unnecessary boilerplate."
+
+  - "Avoid duplicate business logic."
+
+  - "Generate clean, maintainable, scalable code."
+
+  - "Use meaningful variable, class, and method names."
+
+  - "Follow existing folder structure and project conventions."
+
+  - "Add comments only when necessary."
+
+  - "Do not introduce unnecessary dependencies."
+
+  - "Never hardcode secrets, API URLs, or tokens."
+
+  # =========================================================
+  # BACKEND RULES (NODE.JS + EXPRESS)
+  # =========================================================
+  - "Follow the existing Express backend architecture."
+
+  - "Reuse existing middleware, utilities, validators, response handlers, and error handlers."
+
+  - "Keep controllers thin and modular."
+
+  - "Use async/await consistently."
+
+  - "Use proper try/catch blocks for async operations."
+
+  - "Keep API response formats consistent with existing endpoints."
+
+  - "Use proper HTTP status codes."
+
+  - "Add validation for all required fields."
+
+  - "Reuse existing JWT authentication logic."
+
+  - "Extend existing role-based authorization instead of rewriting it."
+
+  - "Do not break existing admin and passenger authentication."
+
+  - "Reuse existing bcrypt password hashing/comparison flow."
+
+  - "Reuse existing token generation utilities if available."
+
+  - "Use MongoDB aggregation pipelines for analytics queries when appropriate."
+
+  - "Optimize database queries and avoid unnecessary repeated queries."
+
+  - "Keep analytics APIs efficient and scalable."
+
+  - "Protect analytics routes using JWT and role authorization middleware."
+
+  - "Reuse existing environment variable patterns."
+
+  - "Do not modify database schemas unless absolutely necessary."
+
+  # =========================================================
+  # FLUTTER FRONTEND RULES
+  # =========================================================
+  - "Analyze the existing Flutter architecture before generating frontend code."
+
+  - "Reuse existing state management architecture already used in the project."
+
+  - "Do not introduce a new state management solution."
+
+  - "Reuse existing API services, repositories, providers, blocs, controllers, and models."
+
+  - "Match the existing Flutter UI design system and spacing patterns."
+
+  - "Follow existing navigation and routing structure."
+
+  - "Use reusable widgets whenever possible."
+
+  - "Keep widgets modular and maintainable."
+
+  - "Add loading, error, and empty states for all API-driven screens."
+
+  - "Use centralized API handling."
+
+  - "Attach JWT tokens using the existing interceptor or API client flow."
+
+  - "Handle token expiration gracefully."
+
+  - "Persist authentication securely using the existing storage solution."
+
+  - "Implement proper role-based navigation."
+
+  - "Prevent unauthorized screen access."
+
+  - "Avoid unnecessary widget rebuilds."
+
+  - "Do not hardcode API URLs throughout the app."
+
+  - "Support dark/light theme if already implemented."
+
+  - "Keep UI responsive and production-ready."
+
+  # =========================================================
+  # AUTHENTICATION RULES
+  # =========================================================
+  - "Reuse the existing authentication flow before creating new auth logic."
+
+  - "Keep authentication consistent across admin, passenger, operator, and driver roles."
+
+  - "Maintain consistent login response structures."
+
+  - "Store JWT tokens securely."
+
+  - "Use role-based authorization consistently."
+
+  - "Do not duplicate login or token logic."
+
+  # =========================================================
+  # ANALYTICS RULES
+  # =========================================================
+  - "Create scalable analytics APIs."
+
+  - "Use aggregation pipelines for statistics and counts."
+
+  - "Keep analytics endpoints optimized for dashboard usage."
+
+  - "Structure analytics responses cleanly for Flutter frontend consumption."
+
+  # =========================================================
+  # CODE GENERATION RULES
+  # =========================================================
+  - "Before generating code, first analyze related existing files."
+
+  - "Prefer extending existing code over rewriting functionality."
+
+  - "Generate only the files and changes necessary for the requested feature."
+
+  - "After implementation, explain modified files and request flow."
+
+  - "Avoid generating placeholder or mock implementations unless explicitly requested."
+
+  - "Keep generated code consistent with the existing project style."
