@@ -33,7 +33,6 @@ export const processTapEvent = async (rfid, busId, latitude, longitude) => {
 
     const lat = parseFloat(latitude);
     const lon = parseFloat(longitude);
-    console.log("BUS: ", bus);
 
     if (!passenger.onBoard) {
       return await handleEntry(
@@ -78,9 +77,7 @@ const handleEntry = async (
   lat,
   lon,
 ) => {
-  console.log("bus:", bus);
 
-  console.log("operator: ", bus.operator);
 
   const trip = await Trip.create(
     [
@@ -100,7 +97,6 @@ const handleEntry = async (
     { session },
   );
   const createdTrip = trip[0];
-  console.log("createdTrip: ", createdTrip);
 
   await User.findByIdAndUpdate(
     passenger._id,
@@ -114,7 +110,6 @@ const handleEntry = async (
   );
 
   await session.commitTransaction();
-  console.log("passengerName: ", passenger.FirstName);
 
   return {
     status: "entry",

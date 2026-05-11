@@ -136,7 +136,6 @@ router.route("/profile").get(verifyJWT, async (req, res) => {
       balance: nfcCard.balance,
       cardUid: nfcCard.cardUid,
     };
-    console.log("userData: ", userData);
 
     return res.status(200).json({
       success: true,
