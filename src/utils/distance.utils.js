@@ -34,17 +34,37 @@ const toRadians = (degrees) => {
 /**
  * Calculate fare based on distance
  */
-export const calculateFare = (distanceKm, ratePerKm = 10) => {
-  // Minimum fare for short distances
-  const minimumFare = 10; // Minimum 15 NPR
 
-  if (distanceKm <= 0) {
+/**
+ * Simple experimental fare model for Pokhara AFC prototype.
+ *
+ * Policy:
+ * - Minimum fare: NPR 20
+ * - Rate: NPR 4 per km
+ * - Distance rounded up to nearest 0.1 km
+ * - Final fare rounded to nearest NPR
+ */
+export const calculateFare = (distanceKm, ratePerKm = 4) => {
+  const minimumFare = 20;
+
+  const distance = Number(distanceKm);
+  const rate = Number(ratePerKm);
+
+  if (!Number.isFinite(distance) || distance < 0) {
+    throw new Error("Invalid distance for fare calculation");
+  }
+
+  if (!Number.isFinite(rate) || rate <= 0) {
+    throw new Error("Invalid rate per km");
+  }
+
+  if (distance === 0) {
     return minimumFare;
   }
 
-  // Round up to nearest 0.1 km for fare calculation
-  const roundedDistance = Math.ceil(distanceKm * 10) / 10;
-  const calculatedFare = roundedDistance * ratePerKm;
+  const roundedDistance = Math.ceil(distance * 10) / 10;
+  const calculatedFare = roundedDistance * rate;
+  const roundedFare = Math.round(calculatedFare);
 
-  return Math.max(calculatedFare, minimumFare);
+  return Math.max(roundedFare, minimumFare);
 };
