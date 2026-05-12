@@ -16,14 +16,16 @@ import {
   unblockNfcCard,
   updateRoleByAdmin,
   verifyNfcCard,
+  verifyUserByAdmin,
 } from "../controller/admin.controller.js";
 const router = Router();
 router.route("/get-all-data").get(verifyJWT,requireAdmin,getAllData)
 router.route("/update-role/:userId").patch(verifyJWT,requireAdmin,sanitize,validate(roleSchema),updateRoleByAdmin)
+router.route("/verify-user/:userId").patch(verifyJWT,requireAdmin,sanitize,verifyUserByAdmin)
 router.route("/remove-role/:userId").patch(verifyJWT,requireAdmin,sanitize,validate(roleSchema),removeRole)
 router.route("/delete-user/:userId").delete(verifyJWT,requireAdmin,sanitize,deleteUser)
 router.route("/pending").get(verifyJWT,requireAdmin,getPendingNfcCard)
-router.route("/verify/:id").patch(verifyJWT,requireAdmin,verifyJWT,verifyNfcCard)
+router.route("/verify/:id").patch(verifyJWT,requireAdmin,verifyNfcCard)
 router.route("/reject/:id").delete(verifyJWT,requireAdmin,rejectNfcCard);
 router.route("/nfc/block-requests").get(verifyJWT,requireAdmin,getNfcBlockRequests);
 router.route("/nfc/:cardId/block").patch(verifyJWT,requireAdmin,blockNfcCard);

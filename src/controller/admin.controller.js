@@ -1,4 +1,3 @@
-import { success } from "zod";
 import { User } from "../model/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -32,6 +31,28 @@ export const updateRoleByAdmin = asyncHandler(async (req, res, next) => {
   res.json(new ApiResponse(200, {}, `${role} role added successfully`));
 });
 
+export const verifyUserByAdmin = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  const user = await User.findById(userId).select("-password -refreshToken");
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (user.isVerified) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, user, "User already verified"));
+  }
+
+  user.isVerified = true;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "User verified successfully"));
+});
+
 export const removeRole = asyncHandler(async (req, res) => {
   const { role } = req.body;
 
@@ -56,6 +77,9 @@ export const deleteUser = asyncHandler(async (req, res) => {
   }
 
   const deletedUser = await User.findByIdAndDelete(userId);
+  if (!deletedUser) {
+    throw new ApiError(404, "User not found");
+  }
 
   return res.json(
     new ApiResponse(200, {
