@@ -63,6 +63,8 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
+userSchema.index({ user_type: 1 });
+
 userSchema.pre("save", async function () {
   if (this.email === process.env.ADMIN_EMAIL) {
     // FIX: was unconditionally overwriting fields on every save (e.g. token refresh).
@@ -251,5 +253,4 @@ export const User = mongoose.model("User", userSchema);
 
 // export const User = new mongoose.model("User",userSchema)
 // src/model/user.model.js
-
 

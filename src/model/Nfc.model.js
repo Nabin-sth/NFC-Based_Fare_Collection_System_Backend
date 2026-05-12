@@ -42,9 +42,45 @@ const nfcCardSchema = new mongoose.Schema({
     default: true,
   },
 
+  status: {
+    type: String,
+    enum: ["active", "block_requested", "blocked"],
+    default: "active",
+    index: true,
+  },
+
   verifiedAt: Date,
 
   lastUsedAt: Date,
+
+  blockRequestedAt: Date,
+
+  blockRequestReason: {
+    type: String,
+    trim: true,
+    maxlength: 240,
+  },
+
+  blockedAt: Date,
+
+  blockedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+
+  blockRejectedAt: Date,
+
+  blockRejectedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+
+  unblockedAt: Date,
+
+  unblockedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
 
   requestedAt: {
     type: Date,
@@ -52,7 +88,8 @@ const nfcCardSchema = new mongoose.Schema({
   },
 });
 
-nfcCardSchema.index({ cardUid: 1 });
 nfcCardSchema.index({ user: 1 });
+nfcCardSchema.index({ user: 1, status: 1 });
+nfcCardSchema.index({ status: 1, blockRequestedAt: -1 });
 
 export const NfcCard = mongoose.model("NfcCard", nfcCardSchema);

@@ -126,23 +126,46 @@ router.route("/profile").get(verifyJWT, async (req, res) => {
   try {
     const user = req.user;
 
-    // get user's default card id
-    const cardid = user.default_card;
+    const cardId = user.defaultNfcCard || user.default_card;
+    const nfcCard = cardId
+      ? await NfcCard.findById(cardId)
+      : await NfcCard.findOne({ user: user._id }).sort({ createdAt: -1 });
 
-    // fetch card data
-    const nfcCard = await NfcCard.findOne({ id: cardid });
-    const userData = {
-      ...user._doc,
-      balance: nfcCard.balance,
-      cardUid: nfcCard.cardUid,
-    };
+    if (!nfcCard) {
+      return res.status(404).json({
+        success: false,
+        message: "NFC card not found",
+      });
+    }
 
     return res.status(200).json({
       success: true,
       user: {
         ...user._doc,
         balance: nfcCard.balance,
-        cardUid: nfcCard.cardUid,
+        cardUid: maskCardUid(nfcCard.cardUid),
+        maskedCardUid: maskCardUid(nfcCard.cardUid),
+        nfcCardId: nfcCard._id,
+        cardStatus: nfcCard.status || (nfcCard.isActive ? "active" : "blocked"),
+        cardType: nfcCard.cardType,
+        isNfcCardActive: nfcCard.isActive,
+        isNfcCardVerified: nfcCard.isVerified,
+        blockRequestedAt: nfcCard.blockRequestedAt,
+        blockRequestReason: nfcCard.blockRequestReason,
+        blockedAt: nfcCard.blockedAt,
+        nfcCard: {
+          id: nfcCard._id,
+          _id: nfcCard._id,
+          cardUid: maskCardUid(nfcCard.cardUid),
+          maskedCardUid: maskCardUid(nfcCard.cardUid),
+          status: nfcCard.status || (nfcCard.isActive ? "active" : "blocked"),
+          cardType: nfcCard.cardType,
+          isActive: nfcCard.isActive,
+          isVerified: nfcCard.isVerified,
+          blockRequestedAt: nfcCard.blockRequestedAt,
+          blockRequestReason: nfcCard.blockRequestReason,
+          blockedAt: nfcCard.blockedAt,
+        },
       },
       message: "Profile successfully fetched",
     });
@@ -156,6 +179,7 @@ router.route("/profile").get(verifyJWT, async (req, res) => {
 });
 import { registerNfcCard } from "../controller/nfc.controller.js";
 import { NfcCard } from "../model/Nfc.model.js";
+import { maskCardUid } from "../utils/nfc.utils.js";
 router
   .route("/register")
   .post(sanitize, validate(userRegisterSchema), registerUser);

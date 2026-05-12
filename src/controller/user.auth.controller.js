@@ -9,9 +9,19 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 // PRIVATE HELPERS
 
-const generateAccessAndRefreshToken = async (userId) => {
+const toSafeUser = (user) => {
+  const safeUser = typeof user.toObject === "function" ? user.toObject() : { ...user };
+  delete safeUser.password;
+  delete safeUser.refreshToken;
+  return safeUser;
+};
+
+const generateAccessAndRefreshToken = async (userOrId) => {
   try {
-    const user = await User.findById(userId);
+    const user =
+      typeof userOrId === "object" && userOrId?._id
+        ? userOrId
+        : await User.findById(userOrId);
     if (!user) throw new ApiError(404, "User not found");
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
@@ -88,8 +98,8 @@ const loginUser = asyncHandler(async (req, res) => {
   if (!isPasswordCorrect)
     throw new ApiError(401, "Incorrect password. Please try again");
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user);
+  const loggedInUser = toSafeUser(user);
   const options = cookieOptions();
 
   return res
@@ -182,8 +192,8 @@ const loginDriver = asyncHandler(async (req, res) => {
   if (!driverDoc)
     throw new ApiError(404, "Driver profile not found. Please contact support.");
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user);
+  const loggedInUser = toSafeUser(user);
   const options = cookieOptions();
 
   return res
@@ -277,8 +287,8 @@ const loginOperator = asyncHandler(async (req, res) => {
   if (!operatorDoc)
     throw new ApiError(404, "Operator profile not found. Please contact support.");
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user);
+  const loggedInUser = toSafeUser(user);
   const options = cookieOptions();
 
   return res
@@ -328,7 +338,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     if (incomingRefreshToken !== user.refreshToken)
       throw new ApiError(401, "Refresh token is expired or already used");
 
-    const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(user._id);
+    const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(user);
     const options = cookieOptions();
 
     return res
@@ -611,8 +621,6 @@ export {
 
 }
 */
-
-
 
 
 

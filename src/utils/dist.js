@@ -1,6 +1,3 @@
-import { calculateFare } from "./distance.utils.js";
-import axios from "axios";
-
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -635,32 +632,9 @@ export function calculateDistance(
   const busRouteWithKm = addCumulativeDistance(normalizedRoute);
   const startPoint = snapToRoute(startLat, startLon, busRouteWithKm);
   const currentPoint = snapToRoute(currentLat, currentLon, busRouteWithKm);
-  console.log("start point: ", startPoint);
-  console.log("current: ", currentPoint);
 
   return Math.abs(currentPoint.km - startPoint.km);
 }
-
-const distanceKm = calculateDistance(
-  28.25666322968834,
-  83.97763826319608, // WRC
-  // 28.248390801560845,
-  // 83.98628555795615, //Sundar Feed
-  28.22361344532293,
-  83.99086912432239, //Mahendra pool
-  // 28.223596751117668,
-  // 83.98766912519636, //chipler
-
-  // 28.212907,
-  // 83.975135, //outside
-  // 28.21056845885183,
-  // 83.98420085049712, // Sabhagriha Chwowk
-  // 28.191221,
-
-  // 83.953952, // chorepatan
-);
-console.log(distanceKm);
-console.log(calculateFare(distanceKm));
 
 // export async function calculateDistanceOsm(startLat, startLon, endLat, endLon) {
 //   try {

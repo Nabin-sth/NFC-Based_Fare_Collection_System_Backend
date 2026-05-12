@@ -4,6 +4,7 @@ import ApiError from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { NfcCard } from "../model/Nfc.model.js";
+import { formatNfcCardForResponse } from "../utils/nfc.utils.js";
 
 export const getAllData = asyncHandler(async (req, res, next) => {
   const user = await User.find().select("-password -refreshToken");
@@ -128,3 +129,127 @@ export const rejectNfcCard = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Card registration rejected"));
 });
 
+export const getNfcBlockRequests = asyncHandler(async (req, res) => {
+  const includeBlocked = req.query.includeBlocked === "true";
+  const statuses = includeBlocked
+    ? ["block_requested", "blocked"]
+    : ["block_requested"];
+
+  const cards = await NfcCard.find({ status: { $in: statuses } })
+    .populate("user", "FirstName email phone nid")
+    .sort({ blockRequestedAt: -1, updatedAt: -1 })
+    .lean();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      cards.map(formatNfcCardForResponse),
+      "NFC block requests fetched successfully",
+    ),
+  );
+});
+
+export const blockNfcCard = asyncHandler(async (req, res) => {
+  const { cardId } = req.params;
+
+  const card = await NfcCard.findById(cardId).populate(
+    "user",
+    "FirstName email phone nid",
+  );
+  if (!card) throw new ApiError(404, "NFC card not found");
+
+  if (card.status === "blocked" || card.isActive === false) {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        formatNfcCardForResponse(card),
+        "NFC card is already blocked",
+      ),
+    );
+  }
+
+  card.status = "blocked";
+  card.isActive = false;
+  card.blockedAt = new Date();
+  card.blockedBy = req.user._id;
+
+  await card.save();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      formatNfcCardForResponse(card),
+      "NFC card blocked successfully",
+    ),
+  );
+});
+
+export const rejectNfcBlock = asyncHandler(async (req, res) => {
+  const { cardId } = req.params;
+
+  const card = await NfcCard.findById(cardId).populate(
+    "user",
+    "FirstName email phone nid",
+  );
+  if (!card) throw new ApiError(404, "NFC card not found");
+
+  if (card.status !== "block_requested") {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        formatNfcCardForResponse(card),
+        "No pending block request found for this NFC card",
+      ),
+    );
+  }
+
+  card.status = "active";
+  card.isActive = true;
+  card.blockRejectedAt = new Date();
+  card.blockRejectedBy = req.user._id;
+
+  await card.save();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      formatNfcCardForResponse(card),
+      "NFC block request rejected",
+    ),
+  );
+});
+
+export const unblockNfcCard = asyncHandler(async (req, res) => {
+  const { cardId } = req.params;
+
+  const card = await NfcCard.findById(cardId).populate(
+    "user",
+    "FirstName email phone nid",
+  );
+  if (!card) throw new ApiError(404, "NFC card not found");
+
+  if (card.status !== "blocked" && card.isActive !== false) {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        formatNfcCardForResponse(card),
+        "NFC card is not blocked",
+      ),
+    );
+  }
+
+  card.status = "active";
+  card.isActive = true;
+  card.unblockedAt = new Date();
+  card.unblockedBy = req.user._id;
+
+  await card.save();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      formatNfcCardForResponse(card),
+      "NFC card unblocked successfully",
+    ),
+  );
+});

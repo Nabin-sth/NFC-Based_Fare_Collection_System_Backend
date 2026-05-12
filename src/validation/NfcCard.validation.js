@@ -21,7 +21,7 @@ export const nfcCardSchema = z.object({
     .default("personal"),
 
   status: z
-    .enum(["active", "lost", "blocked"])
+    .enum(["active", "block_requested", "blocked"])
     .default("active"),
 
   isActive: z.boolean().default(true),

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+import { Operator } from "../model/operator.model.js";
 import { Bus } from "../model/vechile.model.js";
 import ApiError from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -45,6 +46,25 @@ const assertDeviceAllowed = (req) => {
   }
 };
 
+const formatOperator = (operator) => {
+  if (!operator) return null;
+
+  if (operator instanceof mongoose.Types.ObjectId) {
+    return operator;
+  }
+
+  if (typeof operator !== "object" || !operator._id) {
+    return operator;
+  }
+
+  return {
+    id: operator._id,
+    _id: operator._id,
+    companyName: operator.companyName,
+    contact: operator.contact,
+  };
+};
+
 const formatBusLocation = (bus) => {
   const timestamp = bus.currentLocation?.timestamp || bus.lastSeen || null;
 
@@ -77,14 +97,16 @@ const formatBusLocation = (bus) => {
         }
       : null,
 
-    operator: bus.operator,
+    operator: formatOperator(bus.operator),
   };
 };
 
 /**
  * GET /api/v1/buses/locations
  *
- * Returns all buses that have valid currentLocation.
+ * Returns buses that have valid currentLocation.
+ * - Admin/passenger/driver: all live buses, preserving passenger compatibility.
+ * - Operator: only buses belonging to the logged-in operator.
  *
  * Optional query:
  * - includeInactive=true | false
@@ -99,8 +121,8 @@ export const getAllBusLocations = asyncHandler(async (req, res) => {
   } = req.query;
 
   const match = {
-    "currentLocation.lat": { $type: "number" },
-    "currentLocation.lng": { $type: "number" },
+    "currentLocation.lat": { $type: "number", $gte: -90, $lte: 90 },
+    "currentLocation.lng": { $type: "number", $gte: -180, $lte: 180 },
   };
 
   if (status && String(status).trim()) {
@@ -109,6 +131,29 @@ export const getAllBusLocations = asyncHandler(async (req, res) => {
 
   if (includeInactive !== "true") {
     match.status = match.status || { $ne: "inactive" };
+  }
+
+  const roles = req.user?.user_type || [];
+
+  if (roles.includes("operator") && !roles.includes("admin")) {
+    const operatorDoc = await Operator.findOne({ owner: req.user._id })
+      .select("_id")
+      .lean();
+
+    if (!operatorDoc) {
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            count: 0,
+            buses: [],
+          },
+          "Bus locations fetched successfully",
+        ),
+      );
+    }
+
+    match.operator = operatorDoc._id;
   }
 
   const maxAge = Number(maxAgeMinutes);
@@ -125,6 +170,7 @@ export const getAllBusLocations = asyncHandler(async (req, res) => {
       "plateNumber busType status maxCapacity currentOccupancy currentLocation lastSeen driver operator",
     )
     .populate("driver", "licenseNumber status")
+    .populate("operator", "companyName contact")
     .sort({ lastSeen: -1, "currentLocation.timestamp": -1 })
     .lean();
 

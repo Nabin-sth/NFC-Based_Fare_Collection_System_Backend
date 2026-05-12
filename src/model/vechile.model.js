@@ -66,6 +66,7 @@ const busSchema = new Schema(
 );
 
 busSchema.index({ operator: 1, status: 1 });
+busSchema.index({ operator: 1, status: 1, lastSeen: -1 });
 busSchema.index({ "currentLocation.timestamp": 1 });
 
 export const Bus = mongoose.model("Bus", busSchema);

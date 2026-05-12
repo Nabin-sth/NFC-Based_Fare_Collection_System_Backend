@@ -141,11 +141,13 @@ const transactionSchema = new Schema(
   { timestamps: true },
 );
 
-transactionSchema.index({ txnId: 1 }, { unique: true });
 transactionSchema.index({ passenger: 1, createdAt: -1 });
 transactionSchema.index({ nfcCard: 1, createdAt: -1 });
 transactionSchema.index({ nfcCard: 1, status: 1 });
 transactionSchema.index({ trip: 1 });
+transactionSchema.index({ driver: 1, createdAt: -1 });
+transactionSchema.index({ busId: 1, createdAt: -1 });
+transactionSchema.index({ operator: 1, createdAt: -1 });
 transactionSchema.index({ "khalti.pidx": 1 });
 transactionSchema.index({ "khalti.status": 1, createdAt: -1 });
 transactionSchema.index({ status: 1, createdAt: -1 });

@@ -1,32 +1,86 @@
-// models/tapEvent.model.js
-
 import mongoose, { Schema } from "mongoose";
 
 const tapEventSchema = new Schema(
   {
-    card_uid: { type: Schema.Types.ObjectId, ref:"NfcCard" },
-
-    bus: { type: Schema.Types.ObjectId, ref: "Bus" },
-
-    event_type: {
-      type: String,
-      enum: ["entry", "exit"],
-      required: true
+    bus: {
+      type: Schema.Types.ObjectId,
+      ref: "Bus",
+      index: true,
     },
 
-    lat: Number,
-    lng: Number,
+    busPlate: {
+      type: String,
+      trim: true,
+    },
 
-    timestamp: { type: Date, default: Date.now },
+    driver: {
+      type: Schema.Types.ObjectId,
+      ref: "Driver",
+      index: true,
+    },
 
-    synced: { type: Boolean, default: false },
+    operator: {
+      type: Schema.Types.ObjectId,
+      ref: "Operator",
+      index: true,
+    },
 
-    device_signature: String // verifies authenticity
+    passenger: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+    },
+
+    nfcCard: {
+      type: Schema.Types.ObjectId,
+      ref: "NfcCard",
+      index: true,
+    },
+
+    maskedCardUid: {
+      type: String,
+      trim: true,
+    },
+
+    eventType: {
+      type: String,
+      enum: ["tap_in", "tap_out", "payment_required", "failure", "unknown"],
+      default: "unknown",
+    },
+
+    status: {
+      type: String,
+      trim: true,
+      default: "unknown",
+    },
+
+    success: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    message: {
+      type: String,
+      trim: true,
+    },
+
+    failureReason: {
+      type: String,
+      trim: true,
+    },
+
+    fare: {
+      type: Number,
+      default: 0,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-tapEventSchema.index({ card_uid: 1 });
-tapEventSchema.index({ event_type: 1 });
+tapEventSchema.index({ driver: 1, createdAt: -1 });
+tapEventSchema.index({ bus: 1, createdAt: -1 });
+tapEventSchema.index({ nfcCard: 1, createdAt: -1 });
+tapEventSchema.index({ status: 1, createdAt: -1 });
 
 export const TapEvent = mongoose.model("TapEvent", tapEventSchema);

@@ -41,7 +41,7 @@ router.post(
   verifyJWT,
   requirePassenger,
   sanitize,
-  paymeWWntTransaction,
+  paymentTransaction,
 );
 router.get(
   "/transactions",

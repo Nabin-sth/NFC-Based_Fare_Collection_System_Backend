@@ -2,8 +2,21 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import express, { urlencoded } from "express";
 import morgan from "morgan";
+
+import { handleTap } from "./controller/tap.controller.js";
+import { errorHandler } from "./middleware/error.middleware.js";
+import { requestTiming } from "./middleware/requestTiming.middleware.js";
+import { sanitize } from "./middleware/sanitization.middleware.js";
+import { validate } from "./middleware/validate.middleware.js";
+import adminRoute from "./router/admin.route.js";
 import busLocationRoute from "./router/busLocation.routes.js";
-// import { Bus } from "./model/vechile.model.js"; // adjust as needed
+import driverRoute from "./router/driver.route.js";
+import healthRoute from "./router/health.route.js";
+import nfcRoute from "./router/nfc.route.js";
+import operatorRoute from "./router/operator.router.js";
+import paymentRoute from "./router/payment.routes.js";
+import userRoute from "./router/user.route.js";
+import { tapSchema } from "./validation/tap.validation.js";
 
 const app = express();
 
@@ -19,113 +32,23 @@ app.use(morgan("combined"));
 app.use(urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.json({ limit: "16kb" }));
 app.use(express.static("public"));
-import { sanitize } from "./middleware/sanitization.middleware.js";
+app.use(requestTiming);
 app.use(sanitize);
-import { errorHandler } from "./middleware/error.middleware.js";
 
-app.use(errorHandler);
-//routes
-//
-app.use((err, req, res, next) => {
-  console.error(err);
-
-  if (res.headersSent) {
-    return next(err); // ✅ prevent double send
-  }
-
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || "Internal Server Error",
-  });
-});
-
-import userRoute from "./router/user.route.js";
 app.use("/api/v1/users", userRoute);
-import paymentRoute from "./router/payment.routes.js";
 app.use("/api/v1/users/payment", paymentRoute);
-import { handleTap } from "./controller/tap.controller.js";
-import { tapSchema } from "./validation/tap.validation.js";
-import { validate } from "./middleware/validate.middleware.js";
-app.post("/api/v1/user/tap", sanitize, validate(tapSchema), handleTap);
-
-import adminRoute from "./router/admin.route.js";
-import { Bus } from "./model/vechile.model.js";
-import { calculateDistance } from "./utils/distance.utils.js";
+app.post("/api/v1/user/tap", validate(tapSchema), handleTap);
 app.use("/api/v1/admin", adminRoute);
-import operatorRoute from "./router/operator.router.js";
-app.use("/api/v1/operator/", operatorRoute);
-
+app.use("/api/v1/operator", operatorRoute);
+app.use("/api/v1/nfc", nfcRoute);
+app.use("/api/v1/driver", driverRoute);
 app.use("/api/v1/bus", busLocationRoute);
 app.use("/api/v1/buses", busLocationRoute);
 
-// Optional legacy support for the ESP32 while you update main.cpp.
-// This keeps http://SERVER:3000/bus/update-location working.
+// Optional legacy support for ESP32 devices that still post to /bus/update-location.
 app.use("/bus", busLocationRoute);
-// app.post("/bus/update-location", async (req, res) => {
-//   try {
-//     const { busId, lat, lng } = req.body;
 
-//     if (!busId || !lat || !lng) {
-//       return res.status(400).json({ error: "Missing fields" });
-//     }
-
-//     const bus = await Bus.findOneAndUpdate(
-//       { _id: busId },
-//       {
-//         _id: busId,
-//         gps: [{ lat, lng }],
-//         last_seen: new Date(),
-//       },
-//       { upsert: true, new: true },
-//     );
-
-//     res.json({ success: true, bus });
-//   } catch (err) {
-//     console.log(`error:${err}`);
-
-//     res.status(500).json({ error: err });
-//   }
-// });
-
-// app.get("/api/v1/bus/:busId", async (req, res) => {
-//   try {
-//     const bus = await Bus.findOne({ _id: req.params.busId });
-//     if (!bus) return res.status(404).json({ error: "Bus not found" });
-
-//     return res.status(200).json(bus);
-//   } catch (err) {
-//     return res.status(500).json({ error: `${err}` });
-//   }
-// });
-
-// let lastLat = null;
-// let lastLon = null;
-// let totalDistance = 0;
-
-// app.post("/api/v1/bus/update", (req, res) => {
-//   const { latitude, longitude } = req.body;
-
-//   // first GPS update
-//   if (lastLat === null || lastLon === null) {
-//     lastLat = latitude;
-//     lastLon = longitude;
-//     return res.json({ totalDistance, added: 0 });
-//   }
-
-//   // distance from last point to new point
-//   const added = calculateDistance(lastLat, lastLon, latitude, longitude);
-
-//   totalDistance += added;
-
-//   // update last coordinates
-//   lastLat = latitude;
-//   lastLon = longitude;
-
-//   res.json({
-//     addedDistance: added,
-//     totalDistance,
-//   });
-// });
-import healthRoute from "./router/health.route.js";
 app.use("/api/v1", healthRoute);
+app.use(errorHandler);
+
 export default app;

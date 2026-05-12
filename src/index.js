@@ -13,5 +13,3 @@ connectDB()
   .catch((error) => {
     console.log("Error while connecting to the DB:", error);
   });
-
-console.log("Hello anil");
