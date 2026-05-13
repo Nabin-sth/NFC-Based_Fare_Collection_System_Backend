@@ -2,7 +2,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import axios from "axios";
 import ApiError from "../utils/ApiError.js";
 
-const KHALTI_BASE_URL = process.env.KHALTI_BASE_URL || "https://a.khalti.com/api/v2/";
+const KHALTI_BASE_URL =
+  process.env.KHALTI_BASE_URL || "https://a.khalti.com/api/v2/";
 
 export const initiateKhalti = async (payload) => {
   try {
@@ -17,8 +18,8 @@ export const initiateKhalti = async (payload) => {
           Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
           "Content-Type": "application/json",
         },
-        timeout: 15000,
-      }
+        timeout: 30000,
+      },
     );
 
     console.log("[Khalti] SUCCESS:", response.data);
@@ -37,7 +38,9 @@ export const initiateKhalti = async (payload) => {
 
     throw new ApiError(
       error.response?.status || 500,
-      error.response?.data?.detail || error.message || "Khalti initiation failed"
+      error.response?.data?.detail ||
+        error.message ||
+        "Khalti initiation failed",
     );
   }
 };
@@ -46,15 +49,15 @@ export const verifyKhalti = async (pidx) => {
     console.log("[VERIFY KHALTI] pidx:", pidx);
 
     const response = await axios.post(
-      `${process.env.KHALTI_BASE_URL || 'https://a.khalti.com/api/v2/'}epayment/lookup/`,
+      `${process.env.KHALTI_BASE_URL || "https://a.khalti.com/api/v2/"}epayment/lookup/`,
       { pidx },
       {
         headers: {
           Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
           "Content-Type": "application/json",
         },
-        timeout: 10000,
-      }
+        timeout: 30000,
+      },
     );
 
     if (!response?.data) {
@@ -73,7 +76,9 @@ export const verifyKhalti = async (pidx) => {
 
     throw new ApiError(
       error.response?.status || 500,
-      error.response?.data?.detail || error.message || "Khalti verification failed"
+      error.response?.data?.detail ||
+        error.message ||
+        "Khalti verification failed",
     );
   }
 };
