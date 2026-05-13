@@ -11,8 +11,33 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 export const initiatePayment = async (req, res) => {
   const { txnId } = req.body;
-  const txn = await Transaction.findOne({ txnId, status: "payment_required" });
+  const txn = await Transaction.findOne({
+    txnId,
+    status: { $in: ["payment_required", "payment_initiated"] },
+  });
   if (!txn) throw new ApiError(404, "Transaction not found");
+
+  if (String(txn.passenger) !== String(req.user?._id)) {
+    throw new ApiError(403, "You cannot pay another passenger's fare");
+  }
+
+  if (
+    txn.status === "payment_initiated" &&
+    txn.khalti?.pidx &&
+    txn.khalti?.payment_url
+  ) {
+    return res.json(
+      new ApiResponse(
+        200,
+        {
+          payment_url: txn.khalti.payment_url,
+          txnId: txn.txnId,
+          pidx: txn.khalti.pidx,
+        },
+        "Payment already initiated",
+      ),
+    );
+  }
 
   const amountNPR = txn.requiredTopup || txn.fare || 0;
 

@@ -115,6 +115,133 @@ const khaltiAmountToNpr = (totalAmount) => {
   return roundMoney(toNumber(totalAmount) / 100);
 };
 
+const completePendingFareTrip = async ({
+  pendingTxn,
+  nfcCard,
+  session,
+  clearingTxnId,
+}) => {
+  const fareToDeduct = roundMoney(pendingTxn.fare);
+
+  if (!pendingTxn.trip || fareToDeduct <= 0) {
+    return {
+      cleared: false,
+      reason: "NO_LINKED_PENDING_TRIP",
+      fareDebited: 0,
+    };
+  }
+
+  if (roundMoney(nfcCard.balance) < fareToDeduct) {
+    return {
+      cleared: false,
+      reason: "INSUFFICIENT_BALANCE_AFTER_TOPUP",
+      fareDebited: 0,
+    };
+  }
+
+  const trip = await Trip.findById(pendingTxn.trip).session(session);
+
+  if (!trip) {
+    throw new ApiError(404, "Linked pending trip not found");
+  }
+
+  const wasAlreadyCompleted = Boolean(trip.completed);
+
+  // Deduct the old unpaid fare from NFC balance.
+  nfcCard.balance = roundMoney(nfcCard.balance - fareToDeduct);
+
+  if (!trip.completed) {
+    trip.completed = true;
+
+    if (!trip.exitTime) {
+      trip.exitTime = new Date();
+    }
+
+    if (!trip.fare) {
+      trip.fare = fareToDeduct;
+    }
+
+    await trip.save({ session });
+  }
+
+  pendingTxn.status = "completed";
+  pendingTxn.paymentMethod = pendingTxn.paymentMethod || "khalti_auto";
+  pendingTxn.description =
+    pendingTxn.description ||
+    `Pending fare cleared by Khalti top-up ${clearingTxnId}`;
+
+  if (!pendingTxn.busId && trip.busId) {
+    pendingTxn.busId = trip.busId;
+  }
+
+  if (!pendingTxn.operator && trip.operator) {
+    pendingTxn.operator = trip.operator;
+  }
+
+  if (!pendingTxn.driver && trip.driver) {
+    pendingTxn.driver = trip.driver;
+  }
+
+  await pendingTxn.save({ session });
+
+  if (!wasAlreadyCompleted) {
+    const counterUpdates = [];
+
+    if (trip.busId) {
+      counterUpdates.push(
+        Bus.findByIdAndUpdate(
+          trip.busId,
+          {
+            $inc: {
+              totalTrips: 1,
+              totalRevenue: fareToDeduct,
+            },
+          },
+          { session },
+        ),
+      );
+    }
+
+    if (trip.driver) {
+      counterUpdates.push(
+        Driver.findByIdAndUpdate(
+          trip.driver,
+          {
+            $inc: {
+              totalTrips: 1,
+              totalRevenue: fareToDeduct,
+            },
+          },
+          { session },
+        ),
+      );
+    }
+
+    if (trip.operator) {
+      counterUpdates.push(
+        Operator.findByIdAndUpdate(
+          trip.operator,
+          {
+            $inc: {
+              totalRevenue: fareToDeduct,
+            },
+          },
+          { session },
+        ),
+      );
+    }
+
+    await Promise.all(counterUpdates);
+  }
+
+  return {
+    cleared: true,
+    reason: null,
+    fareDebited: fareToDeduct,
+    completedTripId: trip._id,
+  };
+};
+
 export const verifyPayment = async (pidx) => {
   if (!pidx) {
     throw new ApiError(400, "pidx is required for verification");
@@ -180,8 +307,9 @@ export const verifyPayment = async (pidx) => {
       if (nfcCard.balance < 0) {
         nfcCard.balance = 0;
       }
-
-      await nfcCard.save({ session });
+      let autoClearedPendingFare = false;
+      let autoClearedPendingTripId = null;
+      let autoClearedFareDebited = 0;
 
       let completedTrip = null;
 
@@ -276,6 +404,40 @@ export const verifyPayment = async (pidx) => {
           txn.driver = trip.driver;
         }
       }
+      /**
+       * Generic wallet top-up case:
+       * If this Khalti transaction was not directly linked to the old trip,
+       * check whether the passenger still has a payment_required transaction.
+       *
+       * If the new NFC balance is enough, clear that old unpaid fare automatically.
+       */
+      if (fareToDeduct === 0 && txn.passenger && txn.nfcCard) {
+        const pendingFareTxn = await Transaction.findOne({
+          _id: { $ne: txn._id },
+          passenger: txn.passenger,
+          nfcCard: txn.nfcCard,
+          status: "payment_required",
+          trip: { $ne: null },
+        })
+          .sort({ createdAt: -1 })
+          .session(session);
+
+        if (pendingFareTxn) {
+          const clearResult = await completePendingFareTrip({
+            pendingTxn: pendingFareTxn,
+            nfcCard,
+            session,
+            clearingTxnId: txn.txnId,
+          });
+
+          autoClearedPendingFare = clearResult.cleared;
+          autoClearedPendingTripId = clearResult.completedTripId || null;
+          autoClearedFareDebited = clearResult.fareDebited || 0;
+        }
+      }
+
+      // Save NFC card after possible generic-topup pending fare deduction.
+      await nfcCard.save({ session });
 
       if (txn.passenger) {
         await User.findByIdAndUpdate(
@@ -306,10 +468,13 @@ export const verifyPayment = async (pidx) => {
       responsePayload = {
         ...result,
         paidAmount: paidAmountNPR,
-        fareDebited: fareToDeduct,
+        fareDebited: fareToDeduct + autoClearedFareDebited,
         previousNfcBalance: previousBalance,
         finalNfcBalance: roundMoney(nfcCard.balance),
-        completedTripId: completedTrip?._id || null,
+        completedTripId: completedTrip?._id || autoClearedPendingTripId || null,
+        autoClearedPendingFare,
+        autoClearedPendingTripId,
+        autoClearedFareDebited,
       };
     });
 
