@@ -18,7 +18,7 @@ export const initiateKhalti = async (payload) => {
           Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
           "Content-Type": "application/json",
         },
-        timeout: 30000,
+        timeout: 20000,
       },
     );
 
@@ -56,7 +56,7 @@ export const verifyKhalti = async (pidx) => {
           Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
           "Content-Type": "application/json",
         },
-        timeout: 30000,
+        timeout: 10000,
       },
     );
 

@@ -36,6 +36,7 @@ export const initiatePayment = async (req, res) => {
 
   try {
     const khaltiRes = await initiateKhalti(payload);
+    console.log("khaltiRes: ", khaltiRes);
 
     if (!khaltiRes?.pidx || !khaltiRes?.payment_url) {
       throw new ApiError(
@@ -198,6 +199,7 @@ export const paymentTransaction = asyncHandler(async (req, res) => {
       phone: passenger.phone || "9800000001",
     },
   };
+  console.log("payload: ", payload);
 
   const khaltiRes = await initiateKhalti(payload);
 
