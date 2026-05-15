@@ -184,6 +184,7 @@ const handleEntry = async (
   return {
     status: "entry",
     message: "Entry recorded successfully",
+    passengerName: passenger.FirstName,
     tripId: createdTrip._id,
     entryTime: createdTrip.entryTime,
     entryLocation: createdTrip.entryLocation,
