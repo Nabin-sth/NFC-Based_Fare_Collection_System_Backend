@@ -4,12 +4,21 @@ import { components, paths, tags } from "../docs/openapi.js";
 
 const port = process.env.PORT || 4000;
 const localServerUrl = `http://localhost:${port}`;
-const configuredServerUrl = process.env.API_BASE_URL || localServerUrl;
+const deployedServerUrl = "https://major-project-backend-6jvr.onrender.com";
+const configuredServerUrl = process.env.API_BASE_URL || process.env.RENDER_EXTERNAL_URL;
 
 const servers = [
+  ...(configuredServerUrl
+    ? [
+        {
+          url: configuredServerUrl,
+          description: "Configured API server",
+        },
+      ]
+    : []),
   {
-    url: configuredServerUrl,
-    description: process.env.API_BASE_URL ? "Configured API server" : "Local development server",
+    url: deployedServerUrl,
+    description: "Render deployment",
   },
   {
     url: localServerUrl,

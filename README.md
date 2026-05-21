@@ -8,6 +8,12 @@ This backend is built for a public transportation system where passengers can us
 
 The system also supports admin-side NFC card verification, NFC block requests, operator-side fleet and driver management, bus location updates, and Khalti payment integration for recharge or pending fare payment.
 
+## API Documentation
+
+You can explore and test the API using Swagger UI:
+
+- Local: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
+- Production: [https://major-project-backend-6jvr.onrender.com/api-docs](https://major-project-backend-6jvr.onrender.com/api-docs)
 ## Key Features
 
 - Passenger, driver, operator, and admin registration/login
@@ -107,7 +113,7 @@ NODE_ENV=development
 
 MONGODB_URL=mongodb://127.0.0.1:27017/[Add database name here]
 CORS_ORIGIN=http://localhost:[Add frontend port here]
-API_BASE_URL=http://localhost:5000
+API_BASE_URL=https://major-project-backend-6jvr.onrender.com
 
 ACCESS_TOKEN_SECRET=[Add access token secret here]
 REFRESH_TOKEN_SECRET=[Add refresh token secret here]
@@ -115,7 +121,7 @@ ADMIN_EMAIL=admin@example.com
 
 KHALTI_SECRET_KEY=[Add Khalti secret key here]
 KHALTI_BASE_URL=https://a.khalti.com/api/v2/
-KHALTI_RETURN_URL=http://localhost:5000/api/v1/users/payment/khalti/callback
+KHALTI_RETURN_URL=https://major-project-backend-6jvr.onrender.com/api/v1/users/payment/khalti/callback
 WEBSITE_URL=http://localhost:[Add frontend port here]
 
 ESP32_GPS_API_KEY=[Optional device key for GPS update endpoint]
@@ -156,25 +162,25 @@ If `PORT` is not set, the code falls back to port `4000`.
 
 ## API Documentation
 
-Swagger/OpenAPI documentation is available after starting the backend:
+Swagger/OpenAPI documentation is available on the deployed backend:
+
+```text
+https://major-project-backend-6jvr.onrender.com/api-docs
+```
+
+The deployed raw OpenAPI JSON is available at:
+
+```text
+https://major-project-backend-6jvr.onrender.com/api-docs.json
+```
+
+For local development, start the backend and open:
 
 ```text
 http://localhost:<PORT>/api-docs
 ```
 
-For the default local setup:
-
-```text
-http://localhost:5000/api-docs
-```
-
-The raw OpenAPI JSON is available at:
-
-```text
-http://localhost:<PORT>/api-docs.json
-```
-
-Swagger uses `API_BASE_URL` from `.env` when it is set. Otherwise, it uses the local server URL from `PORT`.
+Swagger includes the Render deployment URL, the configured `API_BASE_URL` when set, and the local server URL from `PORT`.
 
 The Swagger UI can be used to inspect endpoints, view request/response examples, and test authenticated routes by clicking **Authorize** and entering a JWT access token as:
 
