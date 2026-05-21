@@ -17,13 +17,99 @@ import mongoose from "mongoose";
 // ─────────────────────────────────────────────────────────────────────────────
 const TAP_COOLDOWN_SECONDS = 10;
 
+const createTapEvent = async ({
+  session,
+  rfid,
+  nfcCard,
+  passenger,
+  bus,
+  eventType,
+  status,
+  success,
+  message,
+  failureReason,
+  fare = 0,
+}) => {
+  const payload = {
+    bus: bus?._id,
+    busPlate: bus?.plateNumber,
+    driver: bus?.driver,
+    operator: bus?.operator,
+    passenger: passenger?._id,
+    nfcCard: nfcCard?._id,
+    maskedCardUid: maskCardUid(nfcCard?.cardUid || rfid),
+    eventType,
+    status,
+    success,
+    message,
+    failureReason,
+    fare,
+  };
+
+  if (session) {
+    await TapEvent.create([payload], { session });
+    return;
+  }
+
+  await TapEvent.create(payload);
+};
+
+const recordFailedTapEvent = async ({
+  rfid,
+  nfcCard,
+  passenger,
+  bus,
+  error,
+}) => {
+  try {
+    await createTapEvent({
+      rfid,
+      nfcCard,
+      passenger,
+      bus,
+      eventType: "failure",
+      status: "failed",
+      success: false,
+      message: error?.message || "Tap failed",
+      failureReason: error?.message || "Tap failed",
+    });
+  } catch (eventError) {
+    console.error("Failed to record tap event:", eventError);
+  }
+};
+
+const isDuplicateTap = (nfcCard) => {
+  if (!nfcCard.lastUsedAt) return false;
+
+  const elapsedMs = Date.now() - new Date(nfcCard.lastUsedAt).getTime();
+  return elapsedMs >= 0 && elapsedMs < TAP_COOLDOWN_SECONDS * 1000;
+};
+
 export const processTapEvent = async (rfid, busId, latitude, longitude) => {
   const session = await mongoose.startSession();
   session.startTransaction();
+  const normalizedRfid = normalizeCardUid(rfid);
+  const eventContext = {
+    rfid: normalizedRfid,
+    nfcCard: null,
+    passenger: null,
+    bus: null,
+  };
 
   try {
-    const nfcCard = await NfcCard.findOne({ cardUid: rfid }).session(session);
+    const nfcCard = await NfcCard.findOne({ cardUid: normalizedRfid }).session(
+      session,
+    );
+    eventContext.nfcCard = nfcCard;
+
+    if (mongoose.Types.ObjectId.isValid(busId)) {
+      eventContext.bus = await Bus.findById(busId).session(session);
+    }
+
     if (!nfcCard) throw new ApiError(404, "NFC card not found");
+    if (nfcCard.status === "blocked") {
+      throw new ApiError(400, "NFC card is blocked");
+    }
     if (!nfcCard.isActive) throw new ApiError(400, "NFC card is not active");
     if (!nfcCard.isVerified)
       throw new ApiError(400, "NFC card is not verified");
@@ -89,7 +175,10 @@ export const processTapEvent = async (rfid, busId, latitude, longitude) => {
       );
     }
   } catch (error) {
-    if (session.inTransaction()) await session.abortTransaction();
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+      await recordFailedTapEvent({ ...eventContext, error });
+    }
     throw error;
   } finally {
     try {
@@ -151,7 +240,7 @@ const handleEntry = async (
   // ── END GUARD 2 ──────────────────────────────────────────────────────────
 
   // All clear — create the entry trip
-  const [createdTrip] = await Trip.create(
+  const trip = await Trip.create(
     [
       {
         passengerId: passenger._id,
@@ -165,6 +254,7 @@ const handleEntry = async (
     ],
     { session },
   );
+  const createdTrip = trip[0];
 
   await User.findByIdAndUpdate(
     passenger._id,
@@ -178,7 +268,16 @@ const handleEntry = async (
     { lastUsedAt: new Date() },
     { session },
   );
-
+  await createTapEvent({
+    session,
+    nfcCard,
+    passenger,
+    bus,
+    eventType: "tap_in",
+    status: "entry",
+    success: true,
+    message: "Entry recorded successfully",
+  });
   await session.commitTransaction();
 
   return {
@@ -321,6 +420,22 @@ const handleExit = async (
       { session, new: true },
     );
 
+    nfcCard.lastUsedAt = new Date();
+    await nfcCard.save({ session });
+
+    await createTapEvent({
+      session,
+      nfcCard,
+      passenger,
+      bus,
+      eventType: "payment_required",
+      status: "payment_required",
+      success: false,
+      message: "Insufficient balance. Top up required.",
+      failureReason: "Insufficient balance",
+      fare,
+    });
+
     await session.commitTransaction();
 
     return {
@@ -343,6 +458,7 @@ const handleExit = async (
   await activeTrip.save({ session });
 
   nfcCard.balance -= fare;
+  nfcCard.lastUsedAt = new Date();
   await nfcCard.save({ session });
 
   await User.findByIdAndUpdate(
@@ -403,6 +519,18 @@ const handleExit = async (
   }
 
   await Promise.all(counterUpdates);
+  await createTapEvent({
+    session,
+    nfcCard,
+    passenger,
+    bus,
+    eventType: "tap_out",
+    status: "exit",
+    success: true,
+    message: "Fare deducted successfully",
+    fare,
+  });
+
   await session.commitTransaction();
 
   return {

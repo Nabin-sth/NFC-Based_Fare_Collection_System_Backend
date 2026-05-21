@@ -48,6 +48,7 @@ export const calculateFare = (distanceKm, ratePerKm = 4) => {
   const minimumFare = 20;
 
   const distance = Number(distanceKm);
+  console.log("distance: ", distance);
   const rate = Number(ratePerKm);
 
   if (!Number.isFinite(distance) || distance < 0) {

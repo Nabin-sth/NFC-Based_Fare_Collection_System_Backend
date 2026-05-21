@@ -1,6 +1,4 @@
-
-
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
@@ -8,11 +6,11 @@ const connectDB = async () => {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 10000,
     });
-    console.log('MongoDB Atlas connected successfully ✅');
+    console.log("MongoDB Atlas connected successfully ✅");
   } catch (error) {
-    console.log('Error while connecting MongoDB Atlas:', error.message);
+    console.log("Error while connecting MongoDB Atlas:", error.message);
     process.exit(1);
   }
 };
 
-export {connectDB};
+export { connectDB };

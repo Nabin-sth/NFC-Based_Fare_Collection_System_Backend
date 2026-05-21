@@ -27,7 +27,7 @@ function snapToRoute(lat, lon, route) {
   return closestPoint;
 }
 
-export function calculateDistance(
+export async function calculateDistance(
   startLat,
   startLon,
   currentLat,
