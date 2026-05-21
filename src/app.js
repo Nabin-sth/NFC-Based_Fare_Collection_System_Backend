@@ -2,7 +2,9 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import express, { urlencoded } from "express";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
 
+import { swaggerSpec } from "./config/swagger.js";
 import { handleTap } from "./controller/tap.controller.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 import { requestTiming } from "./middleware/requestTiming.middleware.js";
@@ -34,6 +36,11 @@ app.use(express.json({ limit: "16kb" }));
 app.use(express.static("public"));
 app.use(requestTiming);
 app.use(sanitize);
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/api-docs.json", (req, res) => {
+  res.status(200).json(swaggerSpec);
+});
 
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/users/payment", paymentRoute);

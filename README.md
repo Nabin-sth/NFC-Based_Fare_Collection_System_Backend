@@ -107,6 +107,7 @@ NODE_ENV=development
 
 MONGODB_URL=mongodb://127.0.0.1:27017/[Add database name here]
 CORS_ORIGIN=http://localhost:[Add frontend port here]
+API_BASE_URL=http://localhost:5000
 
 ACCESS_TOKEN_SECRET=[Add access token secret here]
 REFRESH_TOKEN_SECRET=[Add refresh token secret here]
@@ -117,6 +118,7 @@ KHALTI_BASE_URL=https://a.khalti.com/api/v2/
 KHALTI_RETURN_URL=http://localhost:5000/api/v1/users/payment/khalti/callback
 WEBSITE_URL=http://localhost:[Add frontend port here]
 
+ESP32_GPS_API_KEY=[Optional device key for GPS update endpoint]
 ```
 
 
@@ -151,6 +153,40 @@ http://localhost:5000
 ```
 
 If `PORT` is not set, the code falls back to port `4000`.
+
+## API Documentation
+
+Swagger/OpenAPI documentation is available after starting the backend:
+
+```text
+http://localhost:<PORT>/api-docs
+```
+
+For the default local setup:
+
+```text
+http://localhost:5000/api-docs
+```
+
+The raw OpenAPI JSON is available at:
+
+```text
+http://localhost:<PORT>/api-docs.json
+```
+
+Swagger uses `API_BASE_URL` from `.env` when it is set. Otherwise, it uses the local server URL from `PORT`.
+
+The Swagger UI can be used to inspect endpoints, view request/response examples, and test authenticated routes by clicking **Authorize** and entering a JWT access token as:
+
+```text
+Bearer <access_token>
+```
+
+Swagger dependencies are included in `package.json`. If dependencies are missing, run:
+
+```bash
+npm install
+```
 
 ## Authentication
 
@@ -360,7 +396,7 @@ Recommended manual test areas:
 ## Future Improvements
 
 - Add automated unit and integration tests
-- Add Swagger/OpenAPI documentation
+- Add more detailed Swagger examples for production payloads
 - Add strict environment validation during server startup
 - Add QR ticket support
 - Add offline NFC transaction sync
